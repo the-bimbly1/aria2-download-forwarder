@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>aria2 Download Forwarder options</title>
+<!-- options.html: settings page (aria2, filters, helper, history, export/import). Logic in options.js. -->
+<style>body{font:14px system-ui;max-width:640px;margin:20px auto}label{display:block;margin:10px 0 2px}input[type=text],input[type=password],select{width:100%;padding:5px}#status{margin-top:10px;white-space:pre-wrap}</style></head>
+<body><h2>aria2 Download Forwarder</h2>
+<h3>aria2</h3>
+<label>RPC URL</label><input type="text" id="rpcUrl">
+<label>Secret (optional, sent as token:SECRET)</label><input type="password" id="secret">
+<label><input type="checkbox" id="autoCapture"> Auto-capture browser downloads</label>
+<label>Download dir override (optional, path as seen by the aria2 process)</label><input type="text" id="dir">
+<label>Web UI URL (optional, e.g. AriaNg) — opened from notifications</label><input type="text" id="ariaNgUrl">
+<h3>Auto-capture filters</h3>
+<label>Minimum size in MB (0 = capture everything; unknown sizes are always asked)</label><input type="number" id="minSizeMB" min="0" step="1">
+<label>Only these domains (optional; one per line or comma-separated; subdomains included)</label><textarea id="includeDomains" rows="2" style="width:100%"></textarea>
+<label>Never these domains</label><textarea id="excludeDomains" rows="2" style="width:100%"></textarea>
+<h3>Helper service (optional, context menu)</h3>
+<label>Helper URL</label><input type="text" id="helperUrl">
+<label>Bearer token (optional)</label><input type="password" id="helperToken">
+<label>Mode</label><select id="helperMode"><option>auto</option><option>ytdlp</option><option>browser</option></select>
+<label><input type="checkbox" id="helperSendCookies"> Send cookies for the link to the helper</label>
+<p><button id="save">Save</button> <button id="test">Test connection</button> <button id="checkHelper">Check helper</button></p>
+<div id="status"></div>
+<h3>Backup</h3>
+<p><button id="exportBtn">Export settings</button> <label style="display:inline"><input type="checkbox" id="exportSecrets"> include secret &amp; token</label>
+ <button id="importBtn">Import settings…</button><input type="file" id="importFile" accept="application/json,.json" hidden>
+ <a href="onboarding.html" style="margin-left:12px">Run setup again</a></p>
+<h3>Recent results <button id="clearHist">Clear</button></h3>
+<table id="hist" style="width:100%;font-size:12px;border-collapse:collapse"></table>
+<script src="common.js"></script><script src="options.js"></script></body></html>

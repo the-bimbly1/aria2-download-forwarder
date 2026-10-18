@@ -1,0 +1,65 @@
+# Continuous integration for aria2 Download Forwarder.
+#
+# On every push and pull request: syntax-check the extension JS, validate the
+# manifest, compile and lint the helper, and build the extension zip as an
+# artifact. On a v* tag it also checks that the tag matches the manifest version,
+# then publishes the zip to a GitHub Release.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+# Read-only by default; only the release job gets write access.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: JS syntax
+        run: for f in extension/*.js; do node --check "$f"; done
+      - name: Manifest JSON and version matches tag
+        run: |
+          python3 -m json.tool extension/manifest.json >/dev/null
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            v=$(python3 -c 'import json;print(json.load(open("extension/manifest.json"))["version"])')
+            [[ "v$v" == "${GITHUB_REF_NAME}" ]] || { echo "manifest version $v != tag ${GITHUB_REF_NAME}"; exit 1; }
+          fi
+      # py_compile catches syntax errors; the ruff selection only covers real bugs
+      # (syntax errors, undefined names), not style.
+      - name: Python
+        run: |
+          python3 -m py_compile helper/app.py
+          pip install --quiet ruff && ruff check --select E9,F63,F7,F82 helper/
+      - name: Shell
+        run: bash -n scripts/package.sh
+      - name: Build zip
+        run: scripts/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: dist/*.zip
+
+  # Runs only for version tags, after lint has built and uploaded the zip.
+  release:
+    needs: lint
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: extension-zip, path: dist }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true

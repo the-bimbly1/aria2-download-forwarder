@@ -1,0 +1,9 @@
+dist/
+*.zip
+__pycache__/
+*.pyc
+.env
+*.env
+!.env.example
+downloads/
+.DS_Store

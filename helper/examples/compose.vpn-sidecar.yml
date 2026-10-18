@@ -1,0 +1,32 @@
+# Example: the helper sharing a VPN container's network namespace, next to aria2.
+#
+# With network_mode "service:vpn", the helper has no network of its own. It uses
+# the VPN container's, so all its traffic leaves through the VPN with the same
+# public IP as aria2. That matters for download links tied to the IP that
+# requested them: if the helper resolved a link from a different IP than
+# aria2 downloads from, the link would often fail.
+#
+# Merge this into your existing stack rather than running it on its own. The
+# VPN service shown is a placeholder; gluetun is a common choice. Ports must be
+# published on the VPN container, because a container in another container's
+# namespace can't publish ports itself.
+services:
+  vpn:                                  # your existing VPN container (e.g. qmcgaw/gluetun)
+    # ...existing config...
+    ports:
+      - "${BIND_IP:-127.0.0.1}:6800:6800"   # aria2 RPC (if aria2 also shares this namespace)
+      - "${BIND_IP:-127.0.0.1}:6890:6890"   # helper; set BIND_IP to a private/VPN-overlay IP if remote clients need it
+    # gluetun only: you may also need FIREWALL_INPUT_PORTS=6800,6890
+
+  helper:
+    build: ../                          # path to this helper/ directory
+    network_mode: "service:vpn"         # or "container:<vpn-container-name>" across compose projects
+    depends_on: [vpn]
+    env_file: ../.env                   # chmod 600; holds HELPER_TOKEN
+    environment:
+      ARIA2_RPC: http://127.0.0.1:6800/jsonrpc
+      # IP_CHECK_URL: http://127.0.0.1:8000/v1/publicip/ip   # gluetun control server, optional
+    volumes:
+      - ${DOWNLOADS_PATH:?set DOWNLOADS_PATH}:/downloads
+    restart: unless-stopped
+# Note: adding ports to the VPN container recreates it, which restarts everything sharing its namespace.

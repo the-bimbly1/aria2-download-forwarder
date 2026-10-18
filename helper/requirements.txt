@@ -1,0 +1,8 @@
+# Python dependencies for the helper service. Keep playwright in step with the
+# base image tag in the Dockerfile. yt-dlp is left unpinned on purpose: sites
+# change constantly and old versions stop working.
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+httpx==0.27.*
+playwright==1.48.*
+yt-dlp

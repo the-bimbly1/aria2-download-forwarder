@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Download</title>
+<!-- prompt.html: small per-download window: Send to aria2 or Save locally. Logic in prompt.js. -->
+<style>body{font:13px system-ui;margin:14px;background:#1b1b22;color:#eee}
+.k{color:#999}.v{word-break:break-all;margin-bottom:6px}button{padding:8px 14px;margin-right:8px;border:0;border-radius:4px;cursor:pointer}
+#fwd{background:#fa1e4e;color:#fff}#loc{background:#444;color:#fff}#msg{margin-top:8px}</style></head>
+<body><div class="k">File</div><div class="v" id="name">…</div>
+<div class="k">URL</div><div class="v" id="url"></div>
+<div class="k">Size</div><div class="v" id="size"></div>
+<button id="fwd">Send to aria2</button><button id="loc">Save locally</button><div id="msg"></div>
+<script src="prompt.js"></script></body></html>

@@ -1,0 +1,32 @@
+# Example: the helper and aria2 together on one Docker network, without a VPN.
+#
+# Good for trying things out on a single machine. Both ports are bound to
+# localhost only; see docs/SECURITY.md before opening them up.
+#
+# Usage: cp helper/.env.example helper/.env && chmod 600 helper/.env && edit it, then:
+#   docker compose -f helper/examples/compose.standalone.yml up -d --build
+services:
+  # aria2 with JSON-RPC enabled. The extension's "Send link to aria2" talks to this directly.
+  aria2:
+    image: p3terx/aria2-pro            # any aria2 image with RPC enabled works
+    environment:
+      RPC_SECRET: ${ARIA2_SECRET:-}
+      RPC_PORT: "6800"
+    volumes:
+      - ${DOWNLOADS_PATH:-./downloads}:/downloads
+    ports:
+      - "127.0.0.1:6800:6800"          # bind to localhost (or a private/VPN interface IP), never 0.0.0.0 on the internet
+    restart: unless-stopped
+
+  # The helper reaches aria2 by its service name on the shared compose network.
+  helper:
+    build: ..                          # the helper/ directory (this file lives in helper/examples/)
+    env_file: ../.env                  # helper/.env, chmod 600; holds HELPER_TOKEN
+    environment:
+      ARIA2_RPC: http://aria2:6800/jsonrpc
+    volumes:
+      - ${DOWNLOADS_PATH:-./downloads}:/downloads
+    ports:
+      - "127.0.0.1:6890:6890"
+    depends_on: [aria2]
+    restart: unless-stopped
