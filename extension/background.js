@@ -18,6 +18,23 @@ importScripts("common.js");
 /** URL schemes aria2 can't fetch (or that belong to the browser itself). These are never captured. */
 const SKIP = /^(blob|data|file|filesystem|chrome|chrome-extension|opera|edge|about):/i;
 
+// Downloads the browser vendor makes for itself (updates, components, wallpapers, store assets).
+// These are never something the user clicked, so they must not trigger the prompt.
+const BROWSER_HOSTS = /(^|\.)(opera\.com|operacdn\.com|opera-api\.com|opera-api2\.com|operaftp\.com|operasoftware\.com|gx\.games|microsoftedge\.microsoft\.com|edgeupdates\.microsoft\.com|brave\.com)$/i;
+
+/**
+ * True when a download is browser housekeeping rather than a user download:
+ * it was started by an extension through the downloads API (other than ours,
+ * which is handled separately), or it comes from a browser vendor host.
+ * @param {chrome.downloads.DownloadItem} item
+ * @param {string} url Effective download URL.
+ * @returns {boolean}
+ */
+function isBackgroundDownload(item, url) {
+  if (item.byExtensionId && item.byExtensionId !== chrome.runtime.id) return true;
+  try { return BROWSER_HOSTS.test(new URL(url).hostname); } catch (e) { return false; }
+}
+
 /**
  * Read a value from chrome.storage.session.
  * @param {string} k  Key.
@@ -215,7 +232,7 @@ chrome.downloads.onCreated.addListener(async (item) => {
     const s = await getSettings();
     if (!s.autoCapture) return;
     const url = item.finalUrl || item.url;
-    if (!url || SKIP.test(url)) return;
+    if (!url || SKIP.test(url) || isBackgroundDownload(item, url)) return;
     if (!passesFilters(s, url, item.totalBytes || item.fileSize || -1)) return;
     // "Save locally" markers: consume the marker and let this download run untouched.
     // This is what prevents a capture -> local -> capture loop.
